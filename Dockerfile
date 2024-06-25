@@ -18,4 +18,4 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-CMD [ "php", "bin/console" ]
+CMD [ "php", "bin/console", "app:expand-spreadsheet" ]
