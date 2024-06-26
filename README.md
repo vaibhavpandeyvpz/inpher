@@ -1,6 +1,6 @@
 # inpher
 
-[PHP](https://www.php.net/) console application to automate work with structure data using [OpenAI](https://openai.com/) (or LLMs to be specific).
+[PHP](https://www.php.net/) console application to automate work with structured data using [OpenAI](https://openai.com/) (or LLMs to be specific).
 
 ## Usage
 
