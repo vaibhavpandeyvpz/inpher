@@ -23,4 +23,6 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
+WORKDIR /workspace
+
 CMD [ "php", "/app/bin/console", "expand" ]

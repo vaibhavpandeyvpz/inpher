@@ -9,7 +9,7 @@ Run the [Docker](https://www.docker.com/) image in any folder as below:
 ```shell
 docker run -it --rm \
   -e OPENAI_API_KEY=sk-****** \
-  -v $PWD:/workspace -w /workspace \
+  -v $PWD:/workspace \
   ghcr.io/vaibhavpandeyvpz/inpher
 ```
 
