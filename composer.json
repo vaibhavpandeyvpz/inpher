@@ -7,6 +7,7 @@
     "php": ">=8.1",
     "ext-ctype": "*",
     "ext-iconv": "*",
+    "laravel/prompts": "^0.1.24",
     "symfony/console": "6.4.*",
     "symfony/dotenv": "6.4.*",
     "symfony/flex": "^2",
@@ -14,7 +15,6 @@
     "symfony/runtime": "6.4.*",
     "symfony/yaml": "6.4.*"
   },
-  "require-dev": {},
   "config": {
     "allow-plugins": {
       "php-http/discovery": true,
