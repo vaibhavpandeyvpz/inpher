@@ -62,14 +62,14 @@ PROMPT;
         $headers = array_merge($headers, array_keys($outputs));
 
         if (count($rows) <= $form['chunk']) {
-            $rows = [$rows];
+            $chunks = [$rows];
         } else {
-            $rows = array_chunk($rows, $form['chunk']);
+            $chunks = array_chunk($rows, $form['chunk']);
         }
 
         $consolidated = [];
         $processed = 0;
-        foreach ($rows as $chunk) {
+        foreach ($chunks as $chunk) {
             $output = spin(
                 fn () => $this->expand($prompt, $chunk, [
                     $form['inputs'], // input schema
@@ -227,7 +227,7 @@ PROMPT;
 
         $prompt = textarea(
             'Extra prompt',
-            hint: 'Prompt text to appended to LLM input.',
+            hint: 'Prompt text to be appended with system prompt.',
         );
 
         $chunk = (int) text(
