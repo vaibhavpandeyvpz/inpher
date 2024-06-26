@@ -23,4 +23,4 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --prefer-dist
 
-CMD [ "php", "bin/console", "expand" ]
+CMD [ "php", "/app/bin/console", "expand" ]
