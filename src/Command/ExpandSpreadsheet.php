@@ -43,10 +43,11 @@ class ExpandSpreadsheet extends Command
             ];
         }
 
-        $prompt = <<<'PROMPT'
+        $prompt = <<<PROMPT
 You are a command-line tool to help expanding existing spreadsheet data with additional information based on data and the prompt.
 Expected input is rows from a spreadsheet, formatted as a JSON array.
 Based on the "save_output" tool schema, infer and expand the data with more information.
+{$form['prompt']}
 PROMPT;
 
         $reader = IOFactory::createReaderForFile($form['source']);
