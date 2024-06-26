@@ -35,14 +35,6 @@ class ExpandSpreadsheet extends Command
             return Command::INVALID;
         }
 
-        $schema = [];
-        foreach ($form['outputs'] as $definition) {
-            $schema[$definition['column']] = [
-                'type' => 'string',
-                'description' => $definition['description'],
-            ];
-        }
-
         $prompt = <<<PROMPT
 You are a command-line tool to help expanding existing spreadsheet data with additional information based on data and the prompt.
 Expected input is rows from a spreadsheet, formatted as a JSON array.
@@ -50,14 +42,53 @@ Based on the "save_output" tool schema, infer and expand the data with more info
 {$form['prompt']}
 PROMPT;
 
+        $outputs = [];
+        foreach ($form['outputs'] as $definition) {
+            $outputs[$definition['column']] = [
+                'type' => 'string',
+                'description' => $definition['description'],
+            ];
+        }
+
         $reader = IOFactory::createReaderForFile($form['source']);
         $reader->setReadDataOnly(true);
         $spreadsheet = $reader->load($form['source']);
         $sheet = $spreadsheet->getActiveSheet();
 
         $rows = $sheet->toArray();
-        $headers = array_shift($rows); // remove heading row
 
+        $headers = array_shift($rows); // remove heading row
+        $headers = array_merge($headers, array_keys($outputs));
+
+        if (count($rows) <= $form['chunk']) {
+            $rows = [$rows];
+        } else {
+            $rows = array_chunk($rows, $form['chunk']);
+        }
+
+        $consolidated = [];
+        foreach ($rows as $chunk) {
+            $output = $this->expand($prompt, $chunk, [
+                $form['inputs'], // input schema
+                $outputs, // output schema
+            ]);
+
+            $consolidated = array_merge($consolidated, $output);
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->fromArray($headers);
+        $sheet->fromArray($consolidated, null, 'A2');
+        $writer = new Csv($spreadsheet);
+
+        $writer->save($form['destination']);
+
+        return Command::SUCCESS;
+    }
+
+    private function expand(string $prompt, array $rows, array $schemas): array
+    {
         $result = $this->openai->chat()
             ->create([
                 'model' => 'gpt-4o',
@@ -65,7 +96,7 @@ PROMPT;
                     ['role' => 'system', 'content' => trim($prompt)],
                     [
                         'role' => 'system',
-                        'content' => 'The input data structure can be described as '.json_encode($form['inputs']),
+                        'content' => 'The input data structure can be described as '.json_encode($schemas[0]),
                     ],
                     ['role' => 'user', 'content' => 'Following is the input from the CSV file.'],
                     [
@@ -86,8 +117,8 @@ PROMPT;
                                         'type' => 'array',
                                         'items' => [
                                             'type' => 'object',
-                                            'properties' => $schema,
-                                            'required' => array_keys($schema),
+                                            'properties' => $schemas[1],
+                                            'required' => array_keys($schemas[1]),
                                         ],
                                     ],
                                 ],
@@ -108,20 +139,11 @@ PROMPT;
         $arguments = $message->toolCalls[0]->function->arguments;
         $args = json_decode($arguments, true);
 
-        $headers = array_merge($headers, array_keys($schema));
         foreach ($rows as $i => $row) {
-            $rows[$i] = array_merge($row, array_values($args['rows'][$i]));
+            $rows[$i] = array_merge($row, array_values($args['rows'][$i] ?? []));
         }
 
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->fromArray($headers);
-        $sheet->fromArray($rows, null, 'A2');
-        $writer = new Csv($spreadsheet);
-
-        $writer->save($form['destination']);
-
-        return Command::SUCCESS;
+        return $rows;
     }
 
     private function form(): array
@@ -197,6 +219,17 @@ PROMPT;
             hint: 'Prompt text to appended to LLM input.',
         );
 
+        $chunk = (int) text(
+            'Chunk size',
+            default: '100',
+            required: true,
+            validate: fn (string $value) => match (true) {
+                ! is_numeric($value) => 'The path must be an integer.',
+                default => null
+            },
+            hint: 'No. of rows to process in one pass.',
+        );
+
         $destination = text(
             'Destination file',
             placeholder: 'examples/output.csv',
@@ -214,6 +247,7 @@ PROMPT;
             'inputs',
             'outputs',
             'prompt',
+            'chunk',
             'destination',
         );
     }
