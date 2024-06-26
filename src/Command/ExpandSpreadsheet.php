@@ -4,6 +4,7 @@ namespace App\Command;
 
 use function Laravel\Prompts\confirm;
 use function Laravel\Prompts\multiselect;
+use function Laravel\Prompts\spin;
 use function Laravel\Prompts\text;
 use function Laravel\Prompts\textarea;
 use OpenAI\Client;
@@ -67,13 +68,18 @@ PROMPT;
         }
 
         $consolidated = [];
+        $processed = 0;
         foreach ($rows as $chunk) {
-            $output = $this->expand($prompt, $chunk, [
-                $form['inputs'], // input schema
-                $outputs, // output schema
-            ]);
+            $output = spin(
+                fn () => $this->expand($prompt, $chunk, [
+                    $form['inputs'], // input schema
+                    $outputs, // output schema
+                ]),
+                sprintf('Generating %d-%d of %d…', $processed + 1, $processed + $chunk, count($rows)),
+            );
 
             $consolidated = array_merge($consolidated, $output);
+            $processed += count($chunk);
         }
 
         $spreadsheet = new Spreadsheet();
