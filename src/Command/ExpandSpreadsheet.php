@@ -146,7 +146,7 @@ PROMPT;
         $args = json_decode($arguments, true);
 
         foreach ($rows as $i => $row) {
-            $rows[$i] = array_merge($row, array_values($args['rows'][$i] ?? []));
+            $rows[$i] = array_merge((array) $row, array_values($args['rows'][$i] ?? []));
         }
 
         return $rows;
