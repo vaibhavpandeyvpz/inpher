@@ -75,7 +75,12 @@ PROMPT;
                     $form['inputs'], // input schema
                     $outputs, // output schema
                 ]),
-                sprintf('Generating %d-%d of %d…', $processed + 1, $processed + $chunk, count($rows)),
+                sprintf(
+                    'Generating %d-%d of %d…',
+                    $processed + 1,
+                    $processed + count($chunk),
+                    count($rows)
+                ),
             );
 
             $consolidated = array_merge($consolidated, $output);
